@@ -62,6 +62,8 @@ services:
       - prometheus:prometheus
     volumes:
       - /root/data/grafana:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/dashboard.json:/usr/share/grafana/dashboards/dashboard.json
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=therealdeal
       - GF_USERS_ALLOW_SIGN_UP=false
