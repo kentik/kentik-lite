@@ -5,8 +5,8 @@ services:
     container_name: monitoring_prometheus
     restart: unless-stopped
     volumes:
-      - /root/data/prometheus/config:/etc/prometheus/
-      - /root/data/prometheus/data:/prometheus
+      - ./prometheus/config:/etc/prometheus/
+      - ./prometheus/data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
     expose:
@@ -61,7 +61,7 @@ services:
     links:
       - prometheus:prometheus
     volumes:
-      - /root/data/grafana:/var/lib/grafana
+      - ./grafana/data:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/dashboard.json:/usr/share/grafana/dashboards/dashboard.json
     environment:
