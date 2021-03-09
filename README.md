@@ -2,25 +2,27 @@
 
 This is Kentik in a box. Grab data via pcap from your host, view it in Grafana by way of Promethius.
 
-# Quickstart:
+## Quickstart:
 
-## Define the interface you want to listen for traffic on:
+### Define the interface you want to listen for traffic on:
 export KENTIK_INTERFACE=eth0
 
-## Pull down some supporting data files:
+### Pull down some supporting data files:
 docker-compose run --entrypoint fetch ktranslate
 
-## Run the fleet.
+### Run the fleet.
 docker-compose up
 
-## And start exploring!
+### And start exploring!
 Log into grafana at localhost:3000 with
 
 admin/therealdeal
 
-# Tech Stack
+## Tech Stack
 * KProbe (https://github.com/kentik/kprobe)
 * KTranslate (https://github.com/kentik/ktranslate)
 * Mock Auth
 * Prometheus
 * Grafana
+
+Want more? Sign up for the whole hog at kentik.com.
