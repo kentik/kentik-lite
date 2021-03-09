@@ -1,4 +1,4 @@
-grafana/data
+grafana/data/
 prometheus/data/
 kentik
 
