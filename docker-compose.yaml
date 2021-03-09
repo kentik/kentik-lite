@@ -10,7 +10,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
     expose:
-      - 9090    
+      - 9090
     links:
       - ktranslate:ktranslate
       - node-exporter:node-exporter
@@ -23,7 +23,7 @@ services:
       - 9100
 
   ktranslate:
-     image: kentik/ktranslate:latest
+     image: kentik/ktranslate:v2
      container_name: ktranslate
      restart: unless-stopped
      expose:
@@ -31,7 +31,7 @@ services:
        - 8083
        - 8082
      volumes:
-       - /root/data/kentik:/kentik    
+       - ./kentik:/kentik
      ports:
        - 8082:8082
        - 8083:8083
@@ -48,8 +48,8 @@ services:
        - '--dns=1.1.1.1:53'
        - '--geo=/kentik/country.csv'
        - '--asn4=/kentik/ipv4-asn-ip.csv'
-       - '--asn6=/kentik/ipv6-asn-ip.csv'  
-  
+       - '--asn6=/kentik/ipv6-asn-ip.csv'
+
   grafana:
     image: grafana/grafana:latest
     container_name: monitoring_grafana
@@ -63,6 +63,8 @@ services:
     volumes:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/dashboard.json:/usr/share/grafana/dashboards/dashboard.json
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=therealdeal
@@ -75,20 +77,20 @@ services:
     restart: unless-stopped
     network_mode: host
     command:
-      - '/usr/bin/kprobe' 
-      - '--interface' 
-      - 'eth0' 
-      - '--email' 
+      - '/usr/bin/kprobe'
+      - '--interface'
+      - ${KENTIK_INTERFACE}
+      - '--email'
       - 'not@useful.com'
       - '--token'
-      - 'abc123' 
-      - '--device-id' 
+      - 'abc123'
+      - '--device-id'
       - '26494'
       - '--flow-url'
       - 'http://127.0.0.1:8082/chf'
       - '--api-url'
       - 'http://127.0.0.1:3030'
-    depends_on: 
+    depends_on:
       - ktranslate
 
   auth-mock:
