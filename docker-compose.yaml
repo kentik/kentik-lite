@@ -35,6 +35,8 @@ services:
      ports:
        - 8082:8082
        - 8083:8083
+     dns:
+       - 1.1.1.1
      command:
        - '--prom_listen=:8084'
        - '--sinks=prometheus'
