@@ -10,6 +10,10 @@ This is Kentik in a box. Grab data via pcap from your host, view it in Grafana b
 ### Pull down some supporting data files:
 `docker-compose run --entrypoint fetch ktranslate`
 
+### Fix file permissions.
+`chmod a+w grafana/data`
+`chmod a+w prometheus/data`
+
 ### Run the fleet.
 `docker-compose up`
 
