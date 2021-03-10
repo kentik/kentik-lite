@@ -12,6 +12,7 @@ This is Kentik in a box. Grab data via pcap from your host, view it in Grafana b
 
 ### Fix file permissions.
 `chmod a+w grafana/data`
+
 `chmod a+w prometheus/data`
 
 ### Run the fleet.
