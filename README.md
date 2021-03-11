@@ -26,6 +26,7 @@ Log into grafana at http://localhost:3000 with
 ## Tech Stack
 * KProbe (https://github.com/kentik/kprobe)
 * KTranslate (https://github.com/kentik/ktranslate)
+* Kappa (https://github.com/kentik/kappa)
 * Mock Auth
 * Prometheus
 * Grafana
