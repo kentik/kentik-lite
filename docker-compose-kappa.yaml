@@ -73,6 +73,7 @@ services:
   agg:
     container_name: kappa-agg
     image: kappa:latest
+    restart: unless-stopped
     command: ./kappa agg -v 127.0.0.1:4000
     environment:
       KENTIK_EMAIL:  pye@cloudhelix.com
