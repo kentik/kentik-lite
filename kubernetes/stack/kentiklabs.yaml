@@ -1,0 +1,338 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kentiklabs
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: kentiklabs
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+    rule_files:
+      - '/etc/rules/rules.yml'
+    scrape_configs:
+      - job_name: 'pushgateway'
+        static_configs:
+          - targets: [
+              'localhost:9091',
+            ]
+      - job_name: 'geo'
+        static_configs:
+          - targets: [
+              'geoip:8080',
+            ]
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_service_name]
+          regex: 'kentik-node-exporter'
+          action: keep
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: kentiklabs
+data:
+  rules.yml: |
+    groups:
+      - name: convis
+        rules:
+          - record: bytes_rx:sum
+            expr: sum without(container_id, container_image, process_cmd, source_ip, source_port, destination_ip, destination_port) (bytes_rx)
+          - record: bytes_tx:sum
+            expr: sum without(container_id, container_image, process_cmd, source_ip, source_port, destination_ip, destination_port) (bytes_tx)
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-config
+  namespace: kentiklabs
+data:
+  default.yaml: |
+    apiVersion: 1
+    providers:
+      - name: Default
+        folder: Kentik
+        type: file
+        options:
+          path: /etc/grafana/dashboards
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  namespace: kentiklabs
+data:
+  default.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://prometheus:9090
+        isDefault: true
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kentiklabs-api-role
+  labels:
+    app: convis
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kentiklabs-rolebinding
+  labels:
+    app: kentik-metrics
+subjects:
+- kind: Group
+  name: system:serviceaccounts
+  apiGroup: rbac.authorization.k8s.io
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: kentiklabs-api-role
+  apiGroup: ""
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: kentiklabs
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: docker.io/prom/prometheus:v2.30.0
+          command: [
+            "/bin/prometheus",
+            "--config.file=/etc/prometheus/prometheus.yml",
+            "--storage.tsdb.path=/prometheus",
+            "--web.console.libraries=/usr/share/prometheus/console_libraries",
+            "--web.console.templates=/usr/share/prometheus/consoles/prometheus",
+            "--enable-feature=remote-write-receiver",
+          ]
+          ports:
+          - containerPort: 9090
+            name: prometheus
+          volumeMounts:
+          - name: prometheus-server-config
+            mountPath: /etc/prometheus
+            readOnly: true
+          - name: prometheus-server-rules
+            mountPath: /etc/rules
+            readOnly: true
+        - name: pushgateway
+          image: docker.io/prom/pushgateway:v1.4.1
+          command: ["/bin/pushgateway", "--log.level", "debug"]
+          ports:
+          - containerPort: 9091
+            name: pushgateway
+      volumes:
+        - name: prometheus-server-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-server-rules
+          configMap:
+            name: prometheus-rules
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: kentiklabs
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: docker.io/grafana/grafana:8.1.4
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: labs
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+            - name: GF_SMTP_ENABLED
+              value: "false"
+          ports:
+          - name: grafana
+            containerPort: 3000
+          volumeMounts:
+          - name: grafana-dashboard-config
+            mountPath: /etc/grafana/provisioning/dashboards
+          - name: grafana-datasource
+            mountPath: /etc/grafana/provisioning/datasources
+          - name: grafana-dashboard-kentiklabs
+            mountPath: /etc/grafana/dashboards
+      securityContext:
+        fsGroup: 472
+      volumes:
+        - name: grafana-dashboard-config
+          configMap:
+            name: grafana-dashboard-config
+        - name: grafana-datasource
+          configMap:
+            name: grafana-datasource
+        - name: grafana-dashboard-kentiklabs
+          configMap:
+            name: grafana-dashboard-kentiklabs
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoip
+  namespace: kentiklabs
+spec:
+  selector:
+    matchLabels:
+      app: geoip
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: geoip
+    spec:
+      initContainers:
+        - name: prom-ready
+          image: docker.io/kentiklabs/prometheus-geoip:latest
+          command: ["curl", "--silent", "--fail", "--connect-timeout", "1", "http://prometheus:9090/"]
+      containers:
+        - name: geoip
+          image: docker.io/kentiklabs/prometheus-geoip:latest
+          imagePullPolicy: Always
+          env:
+            - name: QUERY
+              value: "sum by (k8s_namespace, k8s_pod, destination_ip) (bytes_tx{})"
+          command: ["/usr/local/bin/prometheus-geoip", "-D", "-p", "http://prometheus:9090", "-i", "destination_ip", "-d", "/etc/GeoLite2-City.mmdb", "-l", "k8s_namespace", "-l", "k8s_pod"]
+          ports:
+          - containerPort: 8080
+            name: geoip
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: convis
+  namespace: kentiklabs
+spec:
+  selector:
+    matchLabels:
+      app: convis
+  template:
+    metadata:
+      labels:
+        app: convis
+    spec:
+      hostPID: true
+      initContainers:
+        - name: prom-ready
+          image: docker.io/kentiklabs/convis:latest
+          command: ["curl", "--silent", "--fail", "--connect-timeout", "1", "http://prometheus:9090/"]
+      containers:
+        - name: convis
+          image: docker.io/kentiklabs/convis:latest
+          imagePullPolicy: Always
+          env:
+            - name: CONVIS_ARGS
+              value: "--sink prometheus,endpoint=http://prometheus:9090/api/v1/write"
+          volumeMounts:
+            - name: convis-containerd
+              mountPath: /run/containerd/containerd.sock
+          securityContext:
+            privileged: true
+      volumes:
+        - name: convis-containerd
+          hostPath:
+            path: /run/containerd/containerd.sock
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: kentiklabs
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: kentiklabs
+  labels:
+    app: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: prometheus
+      port: 9090
+      targetPort: prometheus
+      protocol: TCP
+    - name: pushgateway
+      port: 9091
+      targetPort: pushgateway
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geoip
+  namespace: kentiklabs
+  labels:
+    app: geoip
+spec:
+  selector:
+    app: geoip
+  ports:
+    - name: geoip
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
