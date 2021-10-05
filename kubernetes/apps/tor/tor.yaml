@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tor
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tor
+  namespace: tor
+  labels:
+    app: tor
+spec:
+  replicas: 25
+  selector:
+    matchLabels:
+      app: tor
+  template:
+    metadata:
+      labels:
+        app: tor
+    spec:
+      containers:
+      - name: tor
+        image: docker.io/ehazlett/tor:latest
+

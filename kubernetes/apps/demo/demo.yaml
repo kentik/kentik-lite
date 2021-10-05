@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  namespace: demo
+  labels:
+    app: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+      - name: demo
+        image: docker.io/ehazlett/sysinfo:latest
+        ports:
+          - containerPort: 8080
+            name: app
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+  namespace: demo
+  labels:
+    app: demo
+spec:
+  selector:
+    app: demo
+  ports:
+    - name: app
+      port: 8080
+      targetPort: app
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-config
+  namespace: demo
+data:
+  script.js: |
+    import http from "k6/http";
+    import { sleep } from "k6";
+    export let options = {
+        vus: 5,
+        stages: [
+            { duration: "1m", target: 50 },
+            { duration: "1m", target: 250 },
+            { duration: "1m", target: 500 },
+            { duration: "1m", target: 25 },
+            { duration: "1m", target: 10 },
+            { duration: "5m", target: 10 },
+        ]
+    };
+    export default function() {
+      let response = http.get("http://demo:8080");
+      sleep(Math.random() * 3 + 2);
+    };
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6
+  namespace: demo
+spec:
+  ttlSecondsAfterFinished: 900
+  parallelism: 1
+  completions: 10
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: k6
+        image: docker.io/ehazlett/k6:latest
+        args: ["k6", "run", "/etc/scripts/script.js"]
+        volumeMounts:
+        - name: k6-config
+          mountPath: /etc/scripts/
+          readOnly: true
+      volumes:
+        - name: k6-config
+          configMap:
+            name: k6-config

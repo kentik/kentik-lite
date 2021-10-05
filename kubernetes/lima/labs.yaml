@@ -1,0 +1,180 @@
+# ===================================================================== #
+# BASIC CONFIGURATION
+# ===================================================================== #
+
+# Arch: "default", "x86_64", "aarch64".
+# "default" corresponds to the host architecture.
+arch: "default"
+
+# An image must support systemd and cloud-init.
+# Ubuntu and Fedora are known to work.
+# Default: none (must be specified)
+images:
+  # Try to use a local image first.
+  - location: "~/Downloads/hirsute-server-cloudimg-amd64.img"
+    arch: "x86_64"
+  - location: "~/Downloads/hirsute-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+  # Download the file from the internet when the local file is missing.
+  # Hint: run `limactl prune` to invalidate the "current" cache
+  - location: "https://cloud-images.ubuntu.com/hirsute/current/hirsute-server-cloudimg-amd64.img"
+    arch: "x86_64"
+  - location: "https://cloud-images.ubuntu.com/hirsute/current/hirsute-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+# CPUs: if you see performance issues, try limiting cpus to 1.
+# Default: 4
+cpus: 2
+
+# Memory size
+# Default: "4GiB"
+memory: "8GiB"
+
+# Disk size
+# Default: "100GiB"
+disk: "100GiB"
+
+# Expose host directories to the guest
+# Default: none
+mounts:
+  - location: "~"
+    writable: false
+  - location: "/tmp/lima"
+    writable: true
+
+ssh:
+  # A localhost port of the host. Forwarded to port 22 of the guest.
+  # Currently, this port number has to be specified manually.
+  # Default: none
+  localPort: 60060
+  # Load ~/.ssh/*.pub in addition to $LIMA_HOME/_config/user.pub .
+  # This option is useful when you want to use other SSH-based
+  # applications such as rsync with the Lima instance.
+  # If you have an insecure key under ~/.ssh, do not use this option.
+  # Default: true
+  loadDotSSHPubKeys: true
+
+containerd:
+  system: true
+  user: false
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/sh
+      PROVISIONED_FILE=/etc/.node-provisioned
+      if [ -f "$PROVISIONED_FILE" ]; then
+          echo "node provisioned; skipping"
+          exit 0
+      fi
+      ln -sf /usr/local/bin/nerdctl /usr/local/bin/docker
+
+      cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+      br_netfilter
+      EOF
+      modprobe br_netfilter
+
+      cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+      EOF
+      sysctl --system
+      # k8s
+      apt-get update
+      apt-get install -y apt-transport-https ca-certificates curl
+      curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+      apt-get update
+      apt-get install -y kubelet kubeadm kubectl
+      apt-mark hold kubelet kubeadm kubectl
+
+      # deploy k8s
+      cat <<EOF | sudo tee /tmp/kubeadm-config.yaml
+      kind: ClusterConfiguration
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kubernetesVersion: v1.22.1
+      networking:
+        podSubnet: "10.244.0.0/16"
+      ---
+      kind: KubeletConfiguration
+      apiVersion: kubelet.config.k8s.io/v1beta1
+      cgroupDriver: cgroupfs
+      EOF
+      kubeadm init --config /tmp/kubeadm-config.yaml
+      # wait until ready
+      while true; do curl -o /dev/null -s -k https://192.168.5.15:6443 ; if [ $? -eq 0 ]; then break ; fi ; done
+      export KUBECONFIG=/etc/kubernetes/admin.conf
+      # taint master
+      kubectl taint nodes --all node-role.kubernetes.io/master-
+      # install cni
+      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      touch $PROVISIONED_FILE
+
+  - mode: user
+    script: |
+      echo "alias k=kubectl" >> ~/.bashrc
+      mkdir -p $HOME/.kube
+      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+probes:
+  - mode: readiness
+    description: kubernetes ready
+    script: |
+      #!/bin/bash
+      set -eux -o pipefail
+      if ! timeout 300s bash -c "until kubectl get nodes; do sleep 5; done"; then
+        echo >&2 "node not ready"
+        exit 1
+      fi
+    hint: |
+      Kubernetes node was not ready in the expected time.  See "/var/log/cloud-init-output.log" in the guest for more info.
+
+firmware:
+  legacyBIOS: false
+
+video:
+  display: "none"
+
+network:
+  vde:
+
+# Port forwarding rules. Forwarding between ports 22 and ssh.localPort cannot be overridden.
+# Rules are checked sequentially until the first one matches.
+# portForwards:
+#   - guestPort: 443
+#     hostIP: "0.0.0.0" # overrides the default value "127.0.0.1"; allows privileged port forwarding
+#   # default: hostPort: 443 (same as guestPort)
+#   # default: guestIP: "127.0.0.1" (also matches bind addresses "0.0.0.0", "::", and "::1")
+#   # default: proto: "tcp" (only valid value right now)
+#   - guestPortRange: [4000, 4999]
+#     hostIP:  "0.0.0.0" # overrides the default value "127.0.0.1"
+#   # default: hostPortRange: [4000, 4999] (must specify same number of ports as guestPortRange)
+#   - guestPort: 80
+#     hostPort: 8080 # overrides the default value 80
+#   - guestIP: "127.0.0.2" # overrides the default value "127.0.0.1"
+#     hostIP: "127.0.0.2" # overrides the default value "127.0.0.1"
+#   # default: guestPortRange: [1024, 65535]
+#   # default: hostPortRange: [1024, 65535]
+#   - guestPort: 8888
+#     ignore: true (don't forward this port)
+#   # Lima internally appends this fallback rule at the end:
+#   - guestIP: "127.0.0.1"
+#     guestPortRange: [1024, 65535]
+#     hostIP: "127.0.0.1"
+#     hostPortRange: [1024, 65535]
+#   # Any port still not matched by a rule will not be forwarded (ignored)
+
+# Extra environment variables that will be loaded into the VM at start up.
+# These variables are currently only consumed by internal init scripts, not by the user shell.
+# This field is experimental and may change in a future release of Lima.
+# https://github.com/lima-vm/lima/pull/200
+# env:
+#   KEY: value
+
+# ===================================================================== #
+# END OF TEMPLATE
+# ===================================================================== #
+

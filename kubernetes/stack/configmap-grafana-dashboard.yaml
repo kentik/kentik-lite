@@ -1,0 +1,717 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kentiklabs
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kentiklabs
+  namespace: kentiklabs
+data:
+  dashboard.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "target": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            },
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "iteration": 1632528748703,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 13,
+          "panels": [],
+          "title": "Containers",
+          "type": "row"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 1
+          },
+          "id": 15,
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "values": [
+                "percent"
+              ]
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (k8s_pod, container_name) (bytes_rx:sum{k8s_namespace=~\"$namespace\", container_name!=\"\"})",
+              "interval": "",
+              "legendFormat": "{{k8s_pod}}_{{container_name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Bytes Received (rx)",
+          "type": "piechart"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "mappings": [],
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 1
+          },
+          "id": 16,
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "values": [
+                "percent"
+              ]
+            },
+            "pieType": "pie",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (k8s_pod, container_name) (bytes_tx:sum{k8s_namespace=~\"$namespace\", container_name!=\"\"})",
+              "interval": "",
+              "legendFormat": "{{k8s_pod}}_{{container_name}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Bytes Transmitted (tx)",
+          "type": "piechart"
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "id": 11,
+          "panels": [],
+          "title": "Connections",
+          "type": "row"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 4,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "binBps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 10
+          },
+          "id": 4,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (k8s_pod) (rate(bytes_rx:sum{k8s_namespace=~\"$namespace\"}[5m]))",
+              "interval": "",
+              "legendFormat": "{{k8s_pod}} (rx)",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum by (k8s_pod) (rate(bytes_tx:sum{k8s_namespace=~\"$namespace\"}[5m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{k8s_pod}} (tx)",
+              "refId": "B"
+            }
+          ],
+          "title": "Pod Traffic",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "fillOpacity": 70,
+                "lineWidth": 1
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#6ED0E0",
+                    "value": 256
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 512
+                  },
+                  {
+                    "color": "#EF843C",
+                    "value": 768
+                  },
+                  {
+                    "color": "red",
+                    "value": 1024
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 22
+          },
+          "id": 2,
+          "maxDataPoints": 500,
+          "options": {
+            "colWidth": 0.9,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "rowHeight": 0.9,
+            "showValue": "auto",
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "8.1.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (destination_ip) (count without (container_id, container_image, destination_port, source_ip, source_port, process_cmd) (bytes_rx{k8s_namespace=~\"$namespace\", container_name!=\"\", event=\"Close\"}))",
+              "instant": false,
+              "interval": "",
+              "legendFormat": "{{destination_ip}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Targets",
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "Time",
+                    "10.244.0.1",
+                    "10.244.0.16",
+                    "10.244.0.35",
+                    "10.244.0.36",
+                    "10.98.8.92",
+                    "10.98.81.147",
+                    "3.231.135.93",
+                    "54.88.2.144"
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "status-history"
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 34
+          },
+          "id": 9,
+          "panels": [],
+          "title": "Processes",
+          "type": "row"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 6,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "binBps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 12,
+            "x": 0,
+            "y": 35
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "table",
+              "placement": "right"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (container_name, process_pid) (rate(bytes_rx:sum{k8s_namespace=~\"$namespace\"}[5m]))",
+              "interval": "",
+              "legendFormat": "{{container_name}} ({{process_pid}})",
+              "refId": "A"
+            }
+          ],
+          "title": "Process Traffic By Pid (rx)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 6,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "binBps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 12,
+            "x": 12,
+            "y": 35
+          },
+          "id": 7,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "table",
+              "placement": "right"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by (container_name, process_pid) (rate(bytes_tx:sum{k8s_namespace=~\"$namespace\"}[5m]))",
+              "interval": "",
+              "legendFormat": "{{container_name}} ({{process_pid}})",
+              "refId": "A"
+            }
+          ],
+          "title": "Process Traffic By Pid (tx)",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "datasource": null,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 47
+          },
+          "id": 18,
+          "panels": [],
+          "title": "Row title",
+          "type": "row"
+        },
+        {
+          "datasource": null,
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 25,
+            "w": 24,
+            "x": 0,
+            "y": 48
+          },
+          "id": 20,
+          "options": {
+            "basemap": {
+              "config": {},
+              "type": "default"
+            },
+            "controls": {
+              "mouseWheelZoom": false,
+              "showAttribution": false,
+              "showDebug": false,
+              "showScale": false,
+              "showZoom": true
+            },
+            "layers": [
+              {
+                "config": {
+                  "color": {
+                    "fixed": "dark-green"
+                  },
+                  "fillOpacity": 0.4,
+                  "shape": "circle",
+                  "showLegend": true,
+                  "size": {
+                    "field": "connections",
+                    "fixed": 5,
+                    "max": 15,
+                    "min": 2
+                  }
+                },
+                "location": {
+                  "mode": "auto"
+                },
+                "type": "markers"
+              }
+            ],
+            "view": {
+              "id": "coords",
+              "lat": 23.37609,
+              "lon": -7.374167,
+              "zoom": 2.49
+            }
+          },
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "geo_ip{k8s_namespace=~\"$namespace\"}",
+              "format": "table",
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "External Connections",
+          "transformations": [
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "connections",
+                "mode": "reduceRow",
+                "reduce": {
+                  "include": [
+                    "Value #A"
+                  ],
+                  "reducer": "sum"
+                }
+              }
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "Time",
+                    "__name__",
+                    "country",
+                    "instance",
+                    "ip",
+                    "job",
+                    "latitude",
+                    "longitude",
+                    "k8s_namespace",
+                    "k8s_pod",
+                    "zip",
+                    "connections"
+                  ]
+                }
+              }
+            }
+          ],
+          "type": "geomap"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 30,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": [
+          {
+            "allValue": null,
+            "current": {
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "datasource": null,
+            "definition": "label_values(bytes_rx{container_name!=\"\"}, k8s_namespace)",
+            "description": null,
+            "error": null,
+            "hide": 0,
+            "includeAll": true,
+            "label": "Namespace",
+            "multi": true,
+            "name": "namespace",
+            "options": [],
+            "query": {
+              "query": "label_values(bytes_rx{container_name!=\"\"}, k8s_namespace)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
+          }
+        ]
+      },
+      "time": {
+        "from": "now-5m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Convis",
+      "uid": "5yICfHH7z",
+      "version": 1
+    }
