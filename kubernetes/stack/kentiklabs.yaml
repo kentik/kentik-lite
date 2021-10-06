@@ -336,3 +336,21 @@ spec:
       port: 8080
       targetPort: 8080
       protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-ext
+  namespace: kentiklabs
+  labels:
+    app: grafana
+spec:
+  selector:
+    app: grafana
+  type: NodePort
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
