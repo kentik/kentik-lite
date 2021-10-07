@@ -30,12 +30,28 @@ to have perform the install automatically:
 apt-get update && apt-get install -y curl unzip
 curl -sSL https://github.com/kentik/kentik-lite/archive/refs/heads/main.zip -o /tmp/kentiklabs.zip
 
-cd /root && unzip -d kentiklabs /tmp/kentiklabs.zip
+cd /var/tmp && unzip -d kentiklabs /tmp/kentiklabs.zip
 cd kentiklabs/*/kubernetes/provision
 
 ./setup.sh
+
+
+cd /var/tmp/kentiklabs/*/kubernetes
+export KUBECONFIG=/etc/kubernetes/admin.conf
+kubectl apply -f stack/
 ```
 
 Once finished, you can use `KUBECONFIG=/etc/kubernetes/admin.conf kubectl -n kentiklabs get service/grafana-ext` to get the `NodePort`
 for the `grafana-ext` service.  You can then access the instance via the IP and port using the username
 and password: `admin` / `labs`.
+
+# Kubernetes Config
+To interact with Kubernetes more than a single command, use the following to configure the local user to have the cluster configuration:
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+Then you should be able to run `kubectl get nodes` and see the cluster nodes.
