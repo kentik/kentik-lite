@@ -31,7 +31,7 @@ apt-get update && apt-get install -y curl unzip
 curl -sSL https://github.com/kentik/kentik-lite/archive/refs/heads/main.zip -o /tmp/kentiklabs.zip
 
 cd /root && unzip -d kentiklabs /tmp/kentiklabs.zip
-cd setup/*/kubernetes/provision
+cd kentiklabs/*/kubernetes/provision
 
 ./setup.sh
 ```
