@@ -115,6 +115,7 @@ You should now be able to open http://localhost:8080 and see Grafana.  The defau
 # Windows Setup
 
 Make sure HyperV is enabled in Windows turn on and off features to make it work.
+Run the below commands in windows powershell administrator mode
 
 ### Download minikube :
 
@@ -199,7 +200,7 @@ Once all pods are in the `Running` status, continue:
     prometheus-774ddbb698-tjn8p   2/2     Running   0          33m
     ```
 
-### Test Data
+# Test Data
 In order to populate the graphs with some real data, we can launch some example apps:
 
 ```bash
