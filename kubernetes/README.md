@@ -1,6 +1,45 @@
 # Kentik Convis Demo
 This repo contains supporting scripts for Convis visualization.
 
+
+
+# Windows Setup
+Make sure Virtualization Technology is enabled in BIOS and Virtual Machine Platform and Windows Subsystem for Linux is enabled in Turn Windows features on and off to make it work. Then reboot your system.
+
+### Install WSL2
+Open the windows powershell administrator mode and run `wsl -l -o` and you will get the name of all the available distros
+
+Now type `wsl --install` to install WSL and reboot your system
+
+Note: If you already have WSL installed then type `wsl --set-default-version 2` to convert it to WSL2. And by default WSL uses the ubuntu distro which we will be using in this demo
+
+### Install Distro
+After restart open Microsoft Store and then download and install Ubuntu.
+Then open it from the start menu after installation and a Ubuntu terminal will pop up saying `Installing, this may take a few seconds`. Wait until the installation is done and it may take a bit of time.
+
+Then in windows powershell administrator mode type `wsl --status`
+
+Then it should show:
+```
+Default Distribution: Ubuntu
+Default Version: 2
+```
+
+WSL2 is now installed in your system
+
+### Install Docker Desktop
+Download docker desktop from [here](https://docs.docker.com/desktop/windows/install/) and set it up on your local system
+
+Now in Docker Desktop go to `Setting > General > Use the WSL 2 based engine` and `Resources > WSL Integration > Enable integration with my default WSL distro` and check the boxes if unchecked
+
+### Enable Kubernetes
+In Docker Desktop go to `Kubernetes > Enable Kubernetes` and enable kubernetes
+
+
+Now `cd` into `kubernetes` in the cloned repo and follow on from [Deployment](#Deployment)
+
+
+
 # Demo
 To run the demo, use the following.  In the examples we use a VM to ensure we have a kernel with proper functionality.  If
 you are running on an existing Kubernetes cluster, skip to [Deployment](#Deployment)
@@ -110,111 +149,3 @@ kubectl -n kentiklabs port-forward service/grafana 8080:3000
 
 You should now be able to open http://localhost:8080 and see Grafana.  The default username and password is `admin` / `labs`.
 
-
-
-# Windows Setup
-
-Make sure HyperV is enabled in Windows turn on and off features to make it work.
-Run the below commands in windows powershell administrator mode
-
-### Download minikube :
-
-[minikube](https://minikube.sigs.k8s.io/docs/start/) is local Kubernetes, focusing on making it easy to learn and develop for Kubernetes.
-
-Installation option guide:
-    Operqating System : Windows
-    Architecture : x86-64
-    Release Type : Stable
-    Installer Type : .exe download
-
-### Start minikube :
-
-```bash
-minikube start --driver hyperv
-```
-
-### Check if it is running : 
-
-```bash
-minikube kubectl -- get pods -A
-```
-
-It should return the following :
-
-    ```
-    NAMESPACE     NAME                               READY   STATUS    RESTARTS     AGE
-    kube-system   coredns-78fcd69978-bzkkh           1/1     Running   0            36s
-    kube-system   etcd-minikube                      1/1     Running   0            48s
-    kube-system   kube-apiserver-minikube            1/1     Running   0            48s
-    kube-system   kube-controller-manager-minikube   1/1     Running   0            48s
-    kube-system   kube-proxy-qvzxb                   1/1     Running   0            36s
-    kube-system   kube-scheduler-minikube            1/1     Running   0            50s
-    kube-system   storage-provisioner                1/1     Running   1 (5s ago)   46s
-    ```
-
-### Now ```cd``` into ```kubernetes/``` in the clone repo 
-
-# Deployment
-
-To deploy the Kentik Convis stack, run the following:
-
-```bash
-minikube kubectl -- apply -f stack/
-```
-
-This will create several Kubernetes resources:
-
-    ```
-    namespace/kentiklabs created
-    configmap/grafana-dashboard-kentiklabs created
-    namespace/kentiklabs unchanged
-    configmap/prometheus-config created
-    configmap/prometheus-rules created
-    configmap/grafana-dashboard-config created
-    configmap/grafana-datasource created
-    clusterrole.rbac.authorization.k8s.io/kentiklabs-api-role created
-    clusterrolebinding.rbac.authorization.k8s.io/kentiklabs-rolebinding created
-    deployment.apps/prometheus created
-    deployment.apps/grafana created
-    deployment.apps/geoip created
-    daemonset.apps/convis created
-    service/grafana created
-    service/prometheus created
-    service/geoip created
-    service/grafana-ext created
-    ```
-
-To check the status of the deployment:
-
-```bash
-minikube kubectl -- -n kentiklabs get pods
-```
-
-Once all pods are in the `Running` status, continue:
-
-    ```
-    NAME                          READY   STATUS    RESTARTS   AGE
-    convis-pg8r5                  1/1     Running   0          33m
-    geoip-68fdc7c7c-4fmfk         1/1     Running   0          33m
-    grafana-9549c9cfb-ld7qg       1/1     Running   0          33m
-    prometheus-774ddbb698-tjn8p   2/2     Running   0          33m
-    ```
-
-# Test Data
-In order to populate the graphs with some real data, we can launch some example apps:
-
-```bash
-minikube kubectl -- apply -f apps/tor/tor.yaml
-```
-
-# Grafana
-Once all pods are in the `Running` status we can use `port-forward` to expose the service:
-
-```bash
-minikube kubectl -- -n kentiklabs port-forward service/grafana 8080:3000
-```
-
-You should now be able to open http://localhost:8080 and see Grafana.  The default username and password is `admin` / `labs`.
-
-This product includes GeoLite2 data created by MaxMind, available from
-<a href="https://www.maxmind.com">https://www.maxmind.com</a>.
