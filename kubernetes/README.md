@@ -6,6 +6,8 @@ This repo contains supporting scripts for Convis visualization.
 # Windows Setup
 Make sure Virtualization Technology is enabled in BIOS and Virtual Machine Platform and Windows Subsystem for Linux is enabled in Turn Windows features on and off to make it work. Then reboot your system.
 
+Note: To make it work you need to have Windows 10 version 1903 or higher
+
 ### Install WSL2
 Open the windows powershell administrator mode and run `wsl -l -o` and you will get the name of all the available distros
 
