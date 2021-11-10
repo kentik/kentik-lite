@@ -1,6 +1,47 @@
 # Kentik Convis Demo
 This repo contains supporting scripts for Convis visualization.
 
+
+
+# Windows Setup
+Make sure Virtualization Technology is enabled in BIOS and Virtual Machine Platform and Windows Subsystem for Linux is enabled in Turn Windows features on and off to make it work. Then reboot your system.
+
+Note: To make it work you need to have Windows 10 version 1903 or higher
+
+### Install WSL2
+Open the windows powershell administrator mode and run `wsl -l -o` and you will get the name of all the available distros
+
+Now type `wsl --install` to install WSL and reboot your system
+
+Note: If you already have WSL installed then type `wsl --set-default-version 2` to convert it to WSL2. And by default WSL uses the ubuntu distro which we will be using in this demo
+
+### Install Distro
+After restart open Microsoft Store and then download and install Ubuntu.
+Then open it from the start menu after installation and a Ubuntu terminal will pop up saying `Installing, this may take a few seconds`. Wait until the installation is done and it may take a bit of time.
+
+Then in windows powershell administrator mode type `wsl --status`
+
+Then it should show:
+```
+Default Distribution: Ubuntu
+Default Version: 2
+```
+
+WSL2 is now installed in your system
+
+### Install Docker Desktop
+Download docker desktop from [here](https://docs.docker.com/desktop/windows/install/) and set it up on your local system
+
+Now in Docker Desktop go to `Setting > General > Use the WSL 2 based engine` and `Resources > WSL Integration > Enable integration with my default WSL distro` and check the boxes if unchecked
+
+### Enable Kubernetes
+In Docker Desktop go to `Kubernetes > Enable Kubernetes` and enable kubernetes
+
+
+Now `cd` into `kubernetes` in the cloned repo and follow on from [Deployment](#Deployment)
+
+
+
 # Demo
 To run the demo, use the following.  In the examples we use a VM to ensure we have a kernel with proper functionality.  If
 you are running on an existing Kubernetes cluster, skip to [Deployment](#Deployment)
@@ -110,5 +151,3 @@ kubectl -n kentiklabs port-forward service/grafana 8080:3000
 
 You should now be able to open http://localhost:8080 and see Grafana.  The default username and password is `admin` / `labs`.
 
-This product includes GeoLite2 data created by MaxMind, available from
-<a href="https://www.maxmind.com">https://www.maxmind.com</a>.
