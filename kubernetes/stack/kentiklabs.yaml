@@ -270,7 +270,7 @@ spec:
           image: docker.io/kentiklabs/convis:latest
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
-          args: ["mount -t debugfs debugfs /sys/kernel/debug; /opt/kentik/convis -v --sink prometheus,endpoint=http://prometheus:9090/api/v1/write"]
+          args: ["ulimit -l 81920000; mount -t debugfs debugfs /sys/kernel/debug; /opt/kentik/convis --sink prometheus,endpoint=http://prometheus:9090/api/v1/write"]
           volumeMounts:
             - name: convis-containerd
               mountPath: /run/containerd/containerd.sock
