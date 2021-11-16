@@ -269,9 +269,8 @@ spec:
         - name: convis
           image: docker.io/kentiklabs/convis:latest
           imagePullPolicy: Always
-          env:
-            - name: CONVIS_ARGS
-              value: "--sink prometheus,endpoint=http://prometheus:9090/api/v1/write"
+          command: ["/bin/sh", "-c"]
+          args: ["mount -t debugfs debugfs /sys/kernel/debug; /opt/kentik/convis -v --sink prometheus,endpoint=http://prometheus:9090/api/v1/write"]
           volumeMounts:
             - name: convis-containerd
               mountPath: /run/containerd/containerd.sock
